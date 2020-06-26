@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
 import { withRouter } from 'react-router-dom';
+import { object } from 'prop-types';
 
 function Form({ history }) {
   const RoleOptions = [
@@ -165,9 +166,21 @@ function Form({ history }) {
     history.push('/formDetails');
   };
 
+  const title = () => {
+    const formDetails = JSON.parse(localStorage.getItem('formDetails')) || {};
+    if (
+      Object.keys(formDetails).length !== 0 &&
+      formDetails.constructor === Object
+    ) {
+      return true;
+    }
+    return false;
+  };
   return (
     <div className="container form">
-      <span className="form-title">Form</span>
+      <span className="form-title">
+        {title() ? 'Edit Form' : 'Create Form'}
+      </span>
       {error ? <p className="error-msg">{errorMsg}</p> : ''}
       <div className="row form-section">
         <span className="col-sm-3 offset-sm-3">UserName</span>

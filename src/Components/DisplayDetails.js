@@ -21,24 +21,35 @@ function DisplayDetails({ history }) {
   const expandRecords = () => {
     setCount(count === 5 ? 10 : 5);
   };
-  const goSearch = () => {
-    const filteredRecords = Object.values(records).filter(record =>
-      checkNestedObjects(record) ? Object.keys[record] : ''
-    );
-    setRecords(filteredRecords);
-  };
-  const checkNestedObjects = obj => {
-    const value = Object.values(obj).filter(v => v === searchWord);
-    if (value.length) {
-      return true;
+  const goSearch = (searchValue = '') => {
+    setSearchWord(searchValue);
+    const notallowed = ['fileName', 'password'];
+    const formDetails = JSON.parse(localStorage.getItem('formDetails')) || {};
+    if (searchValue.length) {
+      // excluding filename and password row
+      Object.keys(formDetails)
+        .filter(key => notallowed.includes(key))
+        .forEach(key => delete formDetails[key]);
+
+      // showing password and fileName row
+      const filteredRecords = Object.values(formDetails).filter(function(
+        record
+      ) {
+        const getkey = Object.keys(formDetails)[
+          Object.values(formDetails).indexOf(record)
+        ];
+        if (getkey === 'password' || getkey === 'fileName') {
+          return record;
+        }
+        return Object.keys(record).some(function(key) {
+          return record[key].toLowerCase().includes(searchValue.toLowerCase());
+        });
+      });
+
+      return setRecords(filteredRecords);
     }
-    return false;
+    return setRecords(formDetails);
   };
-  // function check(object) {
-  //   return Object.values(object).every(v =>
-  //     v && typeof v === 'object' ? check(v) : v === 0 || v === null
-  //   );
-  // }
 
   const goToEdit = () => {
     return history.push('/edit');
@@ -47,7 +58,8 @@ function DisplayDetails({ history }) {
     setDeleteRecord(record);
   };
   const confirmDelete = () => {
-    const newRecords = { ...records };
+    const formDetails = JSON.parse(localStorage.getItem('formDetails')) || {};
+    const newRecords = { ...formDetails };
     delete newRecords[deleteRecord];
     setRecords(newRecords);
     localStorage.setItem('formDetails', JSON.stringify(newRecords));
@@ -69,10 +81,11 @@ function DisplayDetails({ history }) {
   };
 
   const createTags = record => {
+    const formDetails = JSON.parse(localStorage.getItem('formDetails')) || {};
     const bugV = bugfixVersion + 1;
     const tag = `${version}.${minorVersion}.${bugV}`;
     const tempRecord = {
-      ...records,
+      ...formDetails,
       [record]: {
         ...records[record],
         tags: tag
@@ -82,17 +95,25 @@ function DisplayDetails({ history }) {
     setRecords(tempRecord);
     localStorage.setItem('formDetails', JSON.stringify(tempRecord));
   };
+
+  const goToCustomize = () => {
+    history.push(`/customize`);
+  };
   return (
     <div>
       <span className="form-title">Records</span>
       <div>
+        <button className="form-customize" onClick={() => goToCustomize()}>
+          <span>Customize</span>
+          <i class="fa fa-stack-exchange" aria-hidden="true"></i>
+        </button>
         <button
           className="form-edit"
           onClick={() => {
             goToEdit();
           }}
         >
-          Edit
+          <span> Edit</span>
           <i class="fa fa-pencil-square-o" aria-hidden="true"></i>
         </button>
       </div>
@@ -102,7 +123,9 @@ function DisplayDetails({ history }) {
           name="search"
           value={searchWord}
           autoComplete="off"
-          onChange={event => setSearchWord(event.target.value)}
+          onChange={event => {
+            goSearch(event.target.value);
+          }}
         />
         <span
           onClick={() => {
